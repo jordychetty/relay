@@ -49,6 +49,192 @@ function updater(store) {
 * Calling `invalidateRecord()` on the `user` record will mark *that* specific user in the store as stale. That means that any query that is cached and references that invalidated user will now be considered stale, and will require to be refetched again the next time it's evaluated.
 * Note that an updater function can be specified as part of a [mutation](../../updating-data/graphql-mutations/), [subscription](../../updating-data/graphql-subscriptions/) or just a [local store update](../../updating-data/local-data-updates/).
 
+
+### Example of Invalidating Specific Connections
+
+For convenience sake, assume that you have some connection, `FooConnection`, whose data is stale and requires invalidation 
+after a mutation is made to create a new `Foo` object. In this case, rather than invalidating the entire cache, we'd want to rather purge
+the store entries related to the `FooConnection` only.
+
+In order to do this, we have to locate the record associated with the `FooConnection` in the Relay store and invalidate it. As mentioned in other 
+parts of the documentation, there's several ways to find the record you're looking for, but in this example we'll locate the record from the 
+root of the store, asssuming that we don't already have a reference to the connection.
+
+#### Creating the Connection
+
+```ts
+import React from 'react'
+import { usePaginationFragment } from "react-relay/hooks";
+import graphql from "babel-plugin-relay/macro";
+
+const FooList = (props) => {
+
+  const { data, loadNext } = usePaginationFragment<FooListPaginationQuery, any>(
+    graphql`
+      fragment FooListFragment on Query
+      @refetchable(queryName: "FooListPaginationQuery")
+      {
+        foos(first: $count, after: $cursor)
+        @connection(key: "FooListFragment_foos") {
+          edges {
+            node {
+              id
+              bar
+              baz
+            }
+          }
+        }
+      }
+    `, props.fooRef
+  )
+
+  return (
+    <>
+    {
+      data.foos?.edges.map((v) => {
+        return (
+          <>
+            {/** You could also feed the edge or node associated with the edge to a child component that expects a fragment */}
+            <p>{v.node.id}</p>
+            <p>{v.node.bar}</p>
+            <p>{v.node.baz}</p>
+          </>
+        )
+      })
+    }
+    </>
+  )
+}
+
+export default FooList;
+```
+
+
+#### Creating the Query
+
+```ts
+import React from 'react'
+import graphql from "babel-plugin-relay/macro";
+import { usePreloadedQuery } from "react-relay/hooks";
+import type { FooScreenQuery } from "__generated__/FooScreenQuery.graphql";
+
+
+const FooScreen = (props) => {
+
+  const data = usePreloadedQuery<FooScreenQuery>(
+    graphql`
+      query FooScreenQuery($first: Int, $cursor: String) {
+        ...FooListFragment
+      }
+    `, props.queryRef
+  )
+
+  return (
+    <>
+      <FooList fooRef={data}/>
+    </>
+  )
+}
+
+export default FooScreen;
+```
+
+#### Fetching the Query
+
+If `FooList` is rendered immediately, we'll need the data available for it immediately, in which case we have to call `loadQuery`. If it isn't rendered immediately,
+we could delay the GraphQL call by using `useQueryLoader`. This is useful for fetching data for views that contain navigable tabs.
+
+##### Using `loadQuery`
+
+```ts
+import React from 'react';
+import type { FooScreenQuery } from "__generated__/FooQuery.graphql";
+
+// the above query will be located in the directory that you've specified when setting up the relay compiler.
+
+const App = (props) => {
+  const environment = useRelayEnvironment();
+  const preloadedQuery = loadQuery(environment, FooQuery, { }) // if the query comprises any variables, you can add it
+
+  return (
+    <>
+      <FooScreen queryRef={preloadedQuery}>
+    </>
+  )
+}
+
+export default App;
+```
+
+##### Using `useQueryLoader`
+
+#### Mutating and Invalidating the Connection
+
+```ts
+import React, { useState } from "react";
+import { useMutation } from "react-relay/hooks";
+import graphql from "babel-plugin-relay/macro";
+
+const CreateFooButton = (props) => {
+
+  const [fizz, setFizz] = useState<string | null>(undefined)
+
+  const [commit, isInFlight] = useMutation(
+    graphql`
+      mutation FooMutation($input: FooInput!) {
+        createFoo(input: $input) {
+          id
+          bar
+          baz
+          qux
+        }
+      }
+    `
+  )
+
+  const handleChange = (e) => {
+    setFizz(e.target.value)
+  }
+
+  const handleClick = () => {
+    commit({
+      variables: {
+        input: {
+          fizz: fizz
+        }
+      },
+      onCompleted: (r: FooMutationResponse) => {
+        /* do whatever here */
+      },
+      updater: store => {
+        const viewer = store.getRoot().getLinkedRecord("viewer");
+        const connection = ConnectionHandler.getConnection(viewer, "FooListFragment_foos")
+        connection.invalidateRecord();
+      }
+      ,
+      onError: (r) => {
+
+      }
+    })
+  }
+
+  return (
+    <>
+      <input
+        type="text"
+        onChange={handleChange}
+      />
+
+      <button onClick={handleClick}>
+        Submit Foo
+      </button>
+    </>
+  )
+}
+
+export default CreateFooButton;
+```
+
 ## Subscribing to Data Invalidation
 
 Just marking the store or records as stale will cause queries to be refetched they next time they are evaluated; so for example, the next time you navigate back to a page that renders a stale query, the query will be refetched even if the data is cached, since the query references stale data.
