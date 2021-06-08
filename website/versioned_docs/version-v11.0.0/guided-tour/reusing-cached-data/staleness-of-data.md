@@ -148,13 +148,13 @@ we could delay the GraphQL call by using `useQueryLoader`. This is useful for fe
 
 ```ts
 import React from 'react';
-import type { FooScreenQuery } from "__generated__/FooQuery.graphql";
+import { FooScreenQuery } from "__generated__/FooScreenQuery.graphql";
 
 // the above query will be located in the directory that you've specified when setting up the relay compiler.
 
 const App = (props) => {
   const environment = useRelayEnvironment();
-  const preloadedQuery = loadQuery(environment, FooQuery, { }) // if the query comprises any variables, you can add it
+  const preloadedQuery = loadQuery(environment, FooScreenQuery, { }) // if the query comprises any variables, you can add it
 
   return (
     <>
@@ -167,6 +167,60 @@ export default App;
 ```
 
 ##### Using `useQueryLoader`
+
+Let's say that we have multiple views within the same component, prototypical of a view that contains several tabs. 
+In this case, we'll need to load the query when the view is shown or load it immediately irrespective of what tab view
+is currently displayed.
+
+```ts
+import React from 'react';
+import type { FooScreenQuery as FooScreenQueryType } from "__generated__/FooScreenQuery.graphql";
+import { BarScreenQuery } from "__generated__/BarScreenQuery.graphql"; 
+
+
+const fooScreenQuery = require("__generated__/FooScreenQuery.graphql")
+
+const App = (props) => {
+
+  const environment = useRelayEnvironment();
+  const preloadedQuery = loadQuery(environment, BarScreenQuery, { }) // if the query comprises any variables, you can add it
+
+  const [
+    fooScreenQueryRef,
+    loadFooScreenQuery
+  ] = useQueryLoader<FooScreenQueryType>(fooScreenQuery)
+
+  const handleFooScreenOnBeforeSelect = () => {
+    loadFooScreenQuery({})
+  }
+
+  const tabs: Array<{
+    component: JSX.Element,
+    onBeforeSelect?: Function
+    }> = [
+      {
+        component: <BarScreeen queryRef={preloadedQuery}>
+      },
+      {
+        component: <FooScreen queryRef={fooScreenQueryRef}>,
+        onBeforeSelect: handleFooScreenOnBeforeSelect
+      }
+  ]
+
+  /**
+   * `loadFooScreenQuery` needs to be called before the rendering begins. This can be implemented using a handler
+   *  
+   */
+
+  return (
+    <>
+      
+    </>
+  )
+}
+
+export default App;
+```
 
 #### Mutating and Invalidating the Connection
 
