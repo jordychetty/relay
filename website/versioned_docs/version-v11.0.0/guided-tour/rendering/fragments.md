@@ -15,7 +15,7 @@ In practice, they are a selection of fields on a GraphQL Type:
 fragment UserFragment on User {
   name
   age
-  profile_picture(scale: 2) {
+  profilePicture(scale: 2) {
     uri
   }
 }
@@ -31,7 +31,7 @@ const userFragment = graphql`
   fragment UserFragment_user on User {
     name
     age
-    profile_picture(scale: 2) {
+    profilePicture(scale: 2) {
       uri
     }
   }
@@ -58,7 +58,7 @@ function UserComponent(props: Props) {
     graphql`
       fragment UserComponent_user on User {
         name
-        profile_picture(scale: 2) {
+        profilePicture(scale: 2) {
           uri
         }
       }
@@ -70,7 +70,7 @@ function UserComponent(props: Props) {
     <>
       <h1>{data.name}</h1>
       <div>
-        <img src={data.profile_picture?.uri} />
+        <img src={data.profilePicture?.uri} />
       </div>
     </>
   );
@@ -87,7 +87,7 @@ Let's distill what's going on here:
 * Relay will automatically generate Flow types for any declared fragments when the compiler is run, so you can use these types to declare the type for your Component's `props`.
     * The generated Flow types include a type for the fragment reference, which is the type with the `$key` suffix: `<fragment_name>$key`, and a type for the shape of the data, which is the type with the `$data` suffix:  `<fragment_name>$data`; these types are available to import from files that are generated with the following name: `<fragment_name>.graphql.js`.
     * We use our [lint rule](https://github.com/relayjs/eslint-plugin-relay) to enforce that the type of the fragment reference prop is correctly declared when using `useFragment`. By using a properly typed fragment reference as input, the type of the returned `data` will automatically be Flow typed without requiring an explicit annotation.
-    * In our example, we're typing the `user` prop as the fragment reference we need for `useFragment`, which corresponds to the `UserComponent_user$key` imported from  `UserComponent_user.graphql`, which means that the type of `data` above would be: `{ name: ?string, profile_picture: ?{ uri: ?string } }`.
+    * In our example, we're typing the `user` prop as the fragment reference we need for `useFragment`, which corresponds to the `UserComponent_user$key` imported from  `UserComponent_user.graphql`, which means that the type of `data` above would be: `{ name: ?string, profilePicture: ?{ uri: ?string } }`.
 * Fragment names need to be globally unique. In order to easily achieve this, we name fragments using the following convention based on the module name followed by an identifier: `<module_name>_<property_name>`. This makes it easy to identify which fragments are defined in which modules and avoids name collisions when multiple fragments are defined in the same module.
 
 
@@ -110,7 +110,7 @@ function UserComponent(props: Props) {
     graphql`
       fragment UserComponent_user on User {
         name
-        profile_picture(scale: 2) {
+        profilePicture(scale: 2) {
           uri
         }
       }
@@ -133,7 +133,7 @@ function UserComponent(props: Props) {
     <>
       <h1>{userData.name}</h1>
       <div>
-        <img src={userData.profile_picture?.uri} />
+        <img src={userData.profilePicture?.uri} />
         Acting as: {viewerData.actor?.name ?? 'Unknown'}
       </div>
     </>
@@ -151,7 +151,7 @@ In GraphQL, fragments are reusable units, which means they can include *other* f
 fragment UserFragment on User {
   name
   age
-  profile_picture(scale: 2) {
+  profilePicture(scale: 2) {
     uri
   }
   ...AnotherUserFragment
@@ -222,7 +222,7 @@ function UserComponent(props: Props) {
       fragment UserComponent_user on User {
         name
         age
-        profile_picture(scale: 2) {
+        profilePicture(scale: 2) {
           uri
         }
 
@@ -237,7 +237,7 @@ function UserComponent(props: Props) {
     <>
       <h1>{user.name}</h1>
       <div>
-        <img src={user.profile_picture?.uri} />
+        <img src={user.profilePicture?.uri} />
         {user.age}
 
         {/* Render child component, passing the _fragment reference_: */}

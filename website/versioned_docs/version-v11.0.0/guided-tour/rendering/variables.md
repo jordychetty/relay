@@ -70,7 +70,7 @@ Fragments can also reference variables that have been declared by a query:
 ```graphql
 fragment UserFragment on User {
   name
-  profile_picture(scale: $scale) {
+  profilePicture(scale: $scale) {
     uri
   }
 }
@@ -98,7 +98,7 @@ function UserComponent(props: Props) {
     graphql`
     fragment UserComponent_user on User {
       name
-      profile_picture(scale: $scale) {
+      profilePicture(scale: $scale) {
         uri
       }
     }
@@ -132,7 +132,7 @@ function PictureComponent(props) {
 
         # *`**$scale**`* is a local variable here, declared above
         # as an argument *`**scale**`*, of type *`**Float!`*
-        profile_picture(scale: $scale) {
+        profilePicture(scale: $scale) {
           uri
         }
       }
@@ -184,7 +184,7 @@ function OtherUserComponent(props) {
 ```
 
 * Note that when passing `@arguments` to a fragment, we can pass a literal value or pass another variable. The variable can be a global query variable, or another local variable declared via `@argumentDefinitions`.
-* When we actually fetch `PictureComponent_user` as part of a query, the `scale` value passed to the `profile_picture` field will depend on the argument that was provided by the parent of `PictureComponent_user`:
+* When we actually fetch `PictureComponent_user` as part of a query, the `scale` value passed to the `profilePicture` field will depend on the argument that was provided by the parent of `PictureComponent_user`:
     * For `UserComponent_user` the value of `$scale` will be 2.0.
     * For `OtherUserComponent_user`, the value of `$scale` will be whatever value we pass to the server for the `$pictureScale` variable when we fetch the query.
 
@@ -204,7 +204,7 @@ function PictureComponent(props) {
 
         # *`**$scale**`* is a local variable here, declared above
         # as an argument *`**scale**`*, of type *`**Float!` with a default value of *`2.0**`**
-        profile_picture(scale: $scale) {
+        profilePicture(scale: $scale) {
           uri
         }
       }
